@@ -44,18 +44,35 @@ pub(crate) async fn load_key(path: PathBuf) -> io::Result<PrivateKeyDer<'static>
     .await?
 }
 
-pub(crate) async fn config_tls(options: &ConnectorOptions) -> io::Result<ClientConfig> {
+/// Generate a [`RootCertStore`] from native certs
+#[cfg(feature = "tls-certs-native")]
+async fn get_root_store() -> io::Result<RootCertStore> {
     let mut root_store = RootCertStore::empty();
-    // load native system certs only if user did not specify them.
-    if options.tls_client_config.is_some() || options.certificates.is_empty() {
-        let certs_iter = rustls_native_certs::load_native_certs().map_err(|err| {
-            io::Error::new(
-                ErrorKind::Other,
-                format!("could not load platform certs: {err}"),
-            )
-        })?;
-        root_store.add_parsable_certificates(certs_iter);
-    }
+    let certs_iter = rustls_native_certs::load_native_certs().map_err(|err| {
+        io::Error::new(
+            ErrorKind::Other,
+            format!("could not load platform certs: {err}"),
+        )
+    })?;
+    root_store.add_parsable_certificates(certs_iter);
+    Ok(root_store)
+}
+
+/// Generate a [`RootCertStore`] from webpki
+#[cfg(all(feature = "tls-certs-webpki", not(feature = "tls-certs-webpki")))]
+async fn get_root_store() -> io::Result<RootCertStore> {
+    Ok(rustls::RootCertStore {
+        roots: webpki_roots::TLS_SERVER_ROOTS.iter().cloned().collect(),
+    })
+}
+
+pub(crate) async fn config_tls(options: &ConnectorOptions) -> io::Result<ClientConfig> {
+    // Load certs (whether native system or webpki) only if user did not specify them.
+    let mut root_store = if options.tls_client_config.is_some() || options.certificates.is_empty() {
+        get_root_store().await?
+    } else {
+        RootCertStore::empty()
+    };
 
     // use provided ClientConfig or built it from options.
     let tls_config = {

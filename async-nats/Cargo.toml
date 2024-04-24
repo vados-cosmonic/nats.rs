@@ -30,7 +30,8 @@ rustls-pemfile = "2"
 nuid = "0.5"
 serde_nanos = "0.1.3"
 time = { version = "0.3.24", features = ["parsing", "formatting", "serde", "serde-well-known"] }
-rustls-native-certs = "0.7"
+rustls-native-certs = { version = "0.7", optional = true }
+webpki-roots = { version = "0.26.1", optional = true }
 tracing = "0.1"
 thiserror = "1.0"
 base64 = "0.22"
@@ -56,7 +57,7 @@ num = "0.4.1"
 
 
 [features]
-default = ["server_2_10"]
+default = ["server_2_10", "tls-certs-native"]
 # Enables Service API for the client.
 service = []
 # All experimental features are part of this feature flag.
@@ -70,6 +71,12 @@ slow_tests = []
 # Used for tests that ensure compatibility across client libraries in APIs that are abstraction
 # layer build on top of NATS server features (Service API, KV, Object Store etc.)
 compatibility_tests = []
+# Use pre-compiled certs that are available, disregarding the installed local certs.
+# see: https://github.com/rustls/rustls-native-certs?tab=readme-ov-file#should-i-use-this-or-webpki-roots
+tls-certs-webpki = [ "dep:webpki-roots"]
+# Use the system-native installed TLS certs
+# see: https://github.com/rustls/rustls-native-certs?tab=readme-ov-file#should-i-use-this-or-webpki-roots
+tls-certs-native = [ "dep:rustls-native-certs" ]
 
 
 [[bench]]
