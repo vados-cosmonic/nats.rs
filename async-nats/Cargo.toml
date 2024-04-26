@@ -23,7 +23,7 @@ regex = "1.9.1"
 serde = { version = "1.0.184", features = ["derive"] }
 serde_json = "1.0.104"
 serde_repr = "0.1.16"
-tokio = { version = "1.36", features = ["macros", "rt", "fs", "net", "sync", "time", "io-util"] }
+tokio = { version = "1.36", default-features = false }
 url = { version = "2"}
 tokio-rustls = "0.25"
 rustls-pemfile = "2"
@@ -57,7 +57,18 @@ num = "0.4.1"
 
 
 [features]
-default = ["server_2_10", "tls-certs-native"]
+default = [
+        "server_2_10",
+        "tls-certs-native",
+        "tokio/macros",
+        "tokio/rt",
+        "tokio/fs",
+        "tokio/net",
+        "tokio/sync",
+        "tokio/time",
+        "tokio/io-util",
+]
+
 # Enables Service API for the client.
 service = []
 # All experimental features are part of this feature flag.
@@ -77,7 +88,14 @@ tls-certs-webpki = [ "dep:webpki-roots"]
 # Use the system-native installed TLS certs
 # see: https://github.com/rustls/rustls-native-certs?tab=readme-ov-file#should-i-use-this-or-webpki-roots
 tls-certs-native = [ "dep:rustls-native-certs" ]
-
+# Use only tokio features that are supported on the platform
+wasm = [
+     "tokio/sync",
+     "tokio/macros",
+     "tokio/io-util",
+     "tokio/rt",
+     "tokio/time"
+]
 
 [[bench]]
 name = "main"
